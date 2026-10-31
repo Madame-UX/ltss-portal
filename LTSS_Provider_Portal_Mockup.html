@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LTSS Provider Portal</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Arial, "Helvetica Neue", sans-serif;
+    background: #d0d0d0;
+    font-size: 13px;
+    color: #222;
+    min-height: 100vh;
+  }
+
+  /* TOP NAV */
+  .top-nav {
+    background: #1a5fa8;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 42px;
+    padding: 0 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .top-nav .brand { color: #fff; font-size: 15px; font-weight: 700; }
+  .top-nav .nav-links { display: flex; align-items: center; flex: 1; margin-left: 28px; }
+  .top-nav .nav-links a {
+    color: rgba(255,255,255,0.88); text-decoration: none; font-size: 13px;
+    padding: 0 14px; height: 42px; display: flex; align-items: center;
+    border-bottom: 3px solid transparent; cursor: pointer;
+  }
+  .top-nav .nav-links a:hover { background: rgba(255,255,255,0.1); }
+  .top-nav .nav-links a.active { background: rgba(255,255,255,0.15); border-bottom: 3px solid #fff; color: #fff; font-weight: 600; }
+  .top-nav .user-info { color: rgba(255,255,255,0.85); font-size: 12px; }
+  .top-nav .user-info a { color: #a8d4ff; margin-left: 6px; text-decoration: none; font-size: 12px; }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* TITLE BAR */
+  .title-bar {
+    background: #1a5fa8; color: #fff; font-size: 14px; font-weight: 700;
+    letter-spacing: 0.04em; padding: 10px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .title-bar .close-btn { color: rgba(255,255,255,0.8); font-size: 18px; cursor: pointer; }
+
+  /* CLIENT META BAND */
+  .client-meta {
+    background: #fff; border-bottom: 1px solid #ccc;
+    padding: 8px 16px; display: flex; align-items: center;
+    flex-wrap: wrap; gap: 0; font-size: 12px;
+  }
+  .client-meta .meta-item { margin-right: 36px; white-space: nowrap; }
+  .client-meta .meta-item .label { color: #555; margin-right: 4px; }
+  .client-meta .meta-item .value { font-weight: 700; color: #1a5fa8; }
+  .client-meta .meta-item .value.plain { color: #222; }
+  .client-meta .conf-note { margin-left: auto; color: #999; font-style: italic; font-size: 11px; }
+
+  /* BODY ROW */
+  .body-row { display: flex; align-items: stretch; min-height: calc(100vh - 120px); }
+
+  /* SIDEBAR */
+  .sidebar { width: 130px; background: #f0f0f0; border-right: 1px solid #ccc; flex-shrink: 0; padding-top: 8px; }
+  .sidebar .nav-item {
+    padding: 10px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em; color: #444; cursor: pointer;
+    border-left: 3px solid transparent; border-bottom: 1px solid #ddd; line-height: 1.3;
+  }
+  .sidebar .nav-item:hover { background: #e4e4e4; }
+  .sidebar .nav-item.active { background: #fff; border-left: 3px solid #f0a800; color: #222; }
+
+  /* MAIN */
+  .main-content { flex: 1; background: #d0d0d0; padding: 12px; }
+
+  /* SEARCH PAGE LAYOUT */
+  .search-layout { display: flex; gap: 0; min-height: calc(100vh - 85px); }
+  .search-panel {
+    width: 320px; background: #f5f5f5; border-right: 2px solid #bbb;
+    flex-shrink: 0; display: flex; flex-direction: column;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+  }
+  .search-panel .panel-title {
+    background: #444; color: #fff; font-size: 13px; font-weight: 700;
+    letter-spacing: 0.05em; padding: 10px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .search-panel .panel-title .collapse-btn { color: rgba(255,255,255,0.7); cursor: pointer; font-size: 16px; }
+  .search-form { padding: 16px; flex: 1; overflow-y: auto; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .form-row.single { grid-template-columns: 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 11px; font-weight: 600; color: #444; }
+  .form-group input, .form-group select {
+    border: 1px solid #ccc; background: #fff; padding: 5px 8px;
+    font-size: 12px; color: #222; height: 28px;
+  }
+  .form-group input:focus, .form-group select:focus { outline: 1px solid #1a5fa8; border-color: #1a5fa8; }
+  .form-group .multi-select {
+    border: 1px solid #ccc; background: #fff; padding: 5px 8px;
+    font-size: 12px; color: #555; height: 28px; display: flex;
+    align-items: center; justify-content: space-between; cursor: pointer;
+  }
+  .form-group .multi-select span { color: #222; }
+  .search-actions {
+    padding: 12px 16px; border-top: 1px solid #ccc; background: #eee;
+    display: flex; gap: 8px; justify-content: flex-end;
+  }
+  .btn-reset {
+    background: #fff; border: 1px solid #aaa; color: #444;
+    font-size: 12px; padding: 5px 16px; cursor: pointer;
+  }
+  .btn-search {
+    background: #1a5fa8; border: 1px solid #1a5fa8; color: #fff;
+    font-size: 12px; padding: 5px 20px; cursor: pointer; font-weight: 600;
+  }
+  .btn-search:hover { background: #1550a0; }
+
+  /* RESULTS PANEL */
+  .results-panel { flex: 1; background: #d0d0d0; overflow-y: auto; }
+  .results-header {
+    background: #444; color: #fff; padding: 8px 14px; font-size: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-weight: 700; letter-spacing: 0.04em;
+  }
+  .results-header .sort-btn {
+    background: transparent; border: 1px solid rgba(255,255,255,0.4); font-size: 11px;
+    padding: 3px 10px; cursor: pointer; color: #fff;
+  }
+  /* CASELOAD TABLE */
+  .caseload-table { width: 100%; border-collapse: collapse; font-size: 12px; background: #fff; }
+  .caseload-table th {
+    background: #f0f0f0; border-bottom: 2px solid #ccc; padding: 7px 10px;
+    text-align: left; font-size: 11px; font-weight: 700; color: #333;
+    white-space: nowrap; position: sticky; top: 0;
+  }
+  .caseload-table td { padding: 8px 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
+  .caseload-table tr.client-row { cursor: pointer; }
+  .caseload-table tr.client-row:hover td { background: #f0f5fc; }
+  .caseload-table tr.client-row.highlighted td { background: #e8f0fc; }
+  .caseload-table tr.client-row.active-record td { background: #dce8fa; }
+  .caseload-table tr.client-row.active-record td:first-child { border-left: 3px solid #1a5fa8; padding-left: 7px; }
+  .caseload-table tr.client-row.active-record .client-name { color: #1a5fa8; font-weight: 700; }
+  .caseload-table td .client-name { color: #1a5fa8; font-weight: 700; text-decoration: underline; }
+  .caseload-table td .last-note { color: #888; font-size: 11px; }
+  .result-card {
+    background: #fff; margin: 0 12px 2px 12px;
+    border: 1px solid #ccc; cursor: pointer;
+  }
+  .result-card:hover { background: #f5f8fc; }
+  .result-card .card-header {
+    background: #555; color: #fff; padding: 8px 14px;
+    display: flex; gap: 40px; font-size: 12px;
+  }
+  .result-card .card-header .name-field { font-weight: 700; }
+  .result-card .card-header .name-field span { color: #7ec8f5; }
+  .result-card .card-header .id-field span { color: #7ec8f5; }
+  .result-card .card-body {
+    padding: 10px 14px; display: flex; gap: 40px;
+    font-size: 12px; flex-wrap: wrap;
+  }
+  .result-card .card-body .field .label { color: #555; font-weight: 700; margin-right: 4px; }
+  .details-btn {
+    background: #1a5fa8; color: #fff; border: none; font-size: 11px;
+    padding: 4px 12px; cursor: pointer; margin-left: auto; align-self: center;
+  }
+
+  /* SECTION CARD */
+  .section-card { background: #fff; margin-bottom: 0; }
+  .section-header {
+    background: #555; color: #fff; font-size: 13px; font-weight: 700;
+    letter-spacing: 0.04em; padding: 9px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .section-header .header-actions { display: flex; gap: 8px; }
+  .section-header .btn-outline {
+    background: transparent; border: 1px solid rgba(255,255,255,0.6);
+    color: #fff; font-size: 11px; padding: 3px 10px; cursor: pointer;
+  }
+
+  /* ACCORDION */
+  .accordion-item { border-bottom: 1px solid #e8e8e8; }
+  .accordion-title {
+    padding: 9px 16px; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.08em; color: #333; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    text-transform: uppercase; background: #fff;
+  }
+  .accordion-title:hover { background: #f8f8f8; }
+  .accordion-title .arrow { font-size: 10px; color: #777; width: 12px; }
+  .accordion-title.open { color: #1a5fa8; background: #f5f8fc; }
+  .accordion-title.open .arrow { color: #1a5fa8; }
+  .accordion-content { padding: 12px 16px 16px 32px; background: #fff; display: none; }
+  .accordion-content.open { display: block; }
+
+  /* INFO GRID */
+  .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 20px; font-size: 12px; }
+  .info-grid .field-label { color: #555; font-weight: 700; font-size: 11px; margin-bottom: 2px; }
+  .info-grid .field-value { color: #222; }
+  .info-grid .field-value.link { color: #1a5fa8; text-decoration: underline; cursor: pointer; }
+
+  /* STATUS BADGES */
+  .status-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 2px; }
+  .status-badge.approved { background: #d4edda; color: #155724; }
+  .status-badge.pending { background: #fff3cd; color: #856404; }
+  .status-badge.active { background: #d1ecf1; color: #0c5460; }
+  .status-badge.denied { background: #f8d7da; color: #721c24; }
+
+  /* TABLES */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
+  .data-table th {
+    background: #f0f0f0; border-bottom: 2px solid #ccc; padding: 6px 8px;
+    text-align: left; font-weight: 700; font-size: 11px; color: #333; white-space: nowrap;
+  }
+  .data-table td { padding: 6px 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+  .data-table td.link { color: #1a5fa8; text-decoration: underline; cursor: pointer; }
+  .data-table td.center { text-align: center; }
+  .data-table tr:hover td { background: #f5f8fc; }
+
+  /* COST SUMMARY */
+  .cost-summary { margin-top: 12px; border-top: 2px solid #ccc; padding-top: 10px; font-size: 12px; }
+  .cost-summary .cost-row { display: flex; gap: 8px; padding: 3px 0; }
+  .cost-summary .cost-label { width: 280px; color: #555; }
+  .cost-summary .cost-value { font-weight: 600; }
+  .cost-summary .cost-total { font-weight: 700; font-size: 13px; margin-top: 4px; padding-top: 6px; border-top: 1px solid #ccc; }
+
+  /* NOTES */
+  .note-card { border: 1px solid #e0e0e0; margin-bottom: 12px; }
+  .note-card .note-header {
+    background: #f5f5f5; padding: 8px 12px; display: flex;
+    justify-content: space-between; align-items: center; font-size: 11px;
+  }
+  .note-card .note-header .note-meta { color: #555; }
+  .note-card .note-header .note-type {
+    font-weight: 700; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: #1a5fa8;
+  }
+  .note-card .note-body { padding: 10px 12px; font-size: 12px; line-height: 1.7; color: #333; }
+  .note-card .note-footer { padding: 6px 12px; background: #fafafa; font-size: 11px; color: #777; border-top: 1px solid #eee; }
+  .add-note-btn {
+    background: #1a5fa8; color: #fff; border: none; font-size: 11px;
+    padding: 5px 14px; cursor: pointer; margin-bottom: 14px; font-weight: 600;
+  }
+
+  /* LOC ASSESSMENT */
+  .loc-domain {
+    border: 1px solid #e0e0e0; margin-bottom: 8px;
+  }
+  .loc-domain .domain-header {
+    background: #f5f5f5; padding: 7px 12px; display: flex;
+    justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700;
+  }
+  .loc-domain .domain-header .score {
+    background: #1a5fa8; color: #fff; font-size: 11px;
+    padding: 2px 10px; font-weight: 700;
+  }
+  .loc-domain .domain-body { padding: 8px 12px; font-size: 12px; }
+  .loc-domain .domain-body .criterion {
+    display: flex; justify-content: space-between; padding: 4px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .loc-domain .domain-body .criterion:last-child { border-bottom: none; }
+  .loc-domain .domain-body .criterion .crit-label { color: #444; }
+  .loc-domain .domain-body .criterion .crit-value { font-weight: 600; color: #222; }
+  .loc-summary {
+    background: #1a5fa8; color: #fff; padding: 10px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 12px; font-size: 13px;
+  }
+  .loc-summary .total-label { font-weight: 700; }
+  .loc-summary .total-score { font-size: 18px; font-weight: 700; }
+  .loc-summary .eligibility { font-size: 11px; opacity: 0.85; }
+
+  /* DOCUMENTS */
+  .doc-upload-bar {
+    background: #f5f5f5; border: 1px solid #ddd; padding: 10px 14px;
+    margin-bottom: 12px; display: flex; gap: 10px; align-items: center;
+  }
+  .doc-upload-bar select {
+    border: 1px solid #ccc; padding: 4px 8px; font-size: 12px; height: 28px;
+  }
+  .doc-upload-bar .upload-btn {
+    background: #1a5fa8; color: #fff; border: none; font-size: 11px;
+    padding: 5px 14px; cursor: pointer; font-weight: 600;
+  }
+  .doc-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .doc-table th {
+    background: #f0f0f0; border-bottom: 2px solid #ccc; padding: 7px 10px;
+    text-align: left; font-size: 11px; font-weight: 700; color: #333;
+  }
+  .doc-table td { padding: 8px 10px; border-bottom: 1px solid #eee; }
+  .doc-table td .doc-link { color: #1a5fa8; text-decoration: underline; cursor: pointer; }
+  .doc-table td .doc-icon { margin-right: 6px; color: #c00; }
+  .doc-table tr:hover td { background: #f5f8fc; }
+
+  /* PRIOR AUTH */
+  .auth-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .auth-table th {
+    background: #f0f0f0; border-bottom: 2px solid #ccc; padding: 7px 10px;
+    text-align: left; font-size: 11px; font-weight: 700; color: #333; white-space: nowrap;
+  }
+  .auth-table td { padding: 8px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+  .auth-table tr:hover td { background: #f5f8fc; }
+  .auth-table td .auth-link { color: #1a5fa8; text-decoration: underline; cursor: pointer; }
+
+  /* OUTCOME TABLE */
+  .outcome-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
+  .outcome-table th {
+    background: #f0f0f0; border-bottom: 2px solid #ccc; padding: 6px 12px;
+    text-align: left; font-size: 11px; font-weight: 700; color: #333;
+  }
+  .outcome-table td { padding: 8px 12px; border-bottom: 1px solid #eee; vertical-align: top; }
+  .outcome-table tr:hover td { background: #f5f8fc; }
+
+  /* CONTACTS TABLE */
+  .contacts-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .contacts-table th {
+    background: #f0f0f0; border-bottom: 2px solid #ccc; padding: 7px 12px;
+    text-align: left; font-size: 11px; font-weight: 700; color: #333;
+  }
+  .contacts-table td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+
+  /* SIG TABLE */
+  .sig-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 4px; }
+  .sig-table th {
+    background: #f0f0f0; border-bottom: 2px solid #ccc; padding: 6px 10px;
+    text-align: left; font-weight: 700; color: #333; font-size: 11px;
+  }
+  .sig-table td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+  .sig-table td .pdf-link { color: #1a5fa8; text-decoration: underline; cursor: pointer; }
+
+  /* WORKFLOW TABLE */
+  .workflow-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 4px; }
+  .workflow-table th {
+    background: #f0f0f0; border-bottom: 2px solid #ccc; padding: 6px 10px;
+    text-align: left; font-weight: 700; color: #333; font-size: 11px;
+  }
+  .workflow-table td { padding: 6px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+  .workflow-table tr:hover td { background: #f5f8fc; }
+
+  /* SUMMARY TEXT */
+  .summary-text { font-size: 13px; line-height: 1.7; color: #333; max-width: 780px; }
+
+  /* SIMPLE PAGE CONTENT */
+  .simple-page { background: #fff; margin: 12px; padding: 20px; }
+  .page-title-bar {
+    background: #444; color: #fff; font-size: 13px; font-weight: 700;
+    letter-spacing: 0.05em; padding: 10px 16px;
+  }
+
+  /* PROVIDERS PAGE */
+  .providers-layout { display: flex; gap: 0; min-height: calc(100vh - 85px); }
+
+  /* REPORTS PAGE */
+  .report-filter { background: #fff; margin: 12px; padding: 20px; margin-bottom: 0; }
+  .report-results { background: #fff; margin: 0 12px 12px 12px; }
+  .report-header {
+    background: #555; color: #fff; font-size: 13px; font-weight: 700;
+    letter-spacing: 0.04em; padding: 9px 16px;
+  }
+
+  /* FOOTER */
+  .conf-footer {
+    background: #f5f5f5; border-top: 1px solid #ddd; padding: 8px 20px;
+    font-size: 11px; color: #999; font-style: italic; text-align: center;
+  }
+
+  /* CHECK */
+  .check { color: #333; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<!-- TOP NAVIGATION -->
+<div class="top-nav">
+  <div class="brand">Provider Portal</div>
+  <div class="nav-links">
+    <a data-page="home" class="nav-link">Home</a>
+    <a data-page="services" class="nav-link">Services</a>
+    <a data-page="clients" class="nav-link active">Clients</a>
+    <a data-page="providers" class="nav-link">Providers</a>
+    <a data-page="reports" class="nav-link">Reports</a>
+    <a data-page="help" class="nav-link">Help</a>
+    <a data-page="feedback" class="nav-link">Feedback</a>
+  </div>
+  <div class="user-info">Provider Portal User &nbsp;<a href="#">Account ▾</a></div>
+</div>
+
+<!-- ==================== PAGE: HOME ==================== -->
+<div id="page-home" class="page">
+  <div class="page-title-bar" style="background:#1a5fa8;">PROVIDER PORTAL — HOME</div>
+  <div style="padding:24px 20px; background:#d0d0d0; min-height:calc(100vh - 85px);">
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; max-width:980px;">
+      <div style="background:#fff; padding:20px; border-left:4px solid #1a5fa8; cursor:pointer;" onclick="showPage('clients')">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#555;margin-bottom:8px;">My Caseload</div>
+        <div style="font-size:28px;font-weight:700;color:#1a5fa8;">34</div>
+        <div style="font-size:12px;color:#777;margin-top:4px;">Active clients — Region 7</div>
+      </div>
+      <div style="background:#fff; padding:20px; border-left:4px solid #c00; cursor:pointer;" onclick="showPage('clients')">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#555;margin-bottom:8px;">Notes Overdue</div>
+        <div style="font-size:28px;font-weight:700;color:#c00;">3</div>
+        <div style="font-size:12px;color:#777;margin-top:4px;">Monthly notes past due</div>
+      </div>
+      <div style="background:#fff; padding:20px; border-left:4px solid #f0a800; cursor:pointer;" onclick="showPage('reports')">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#555;margin-bottom:8px;">Prior Auths Pending</div>
+        <div style="font-size:28px;font-weight:700;color:#f0a800;">2</div>
+        <div style="font-size:12px;color:#777;margin-top:4px;">Awaiting approval</div>
+      </div>
+      <div style="background:#fff; padding:20px; border-left:4px solid #555; cursor:pointer;" onclick="showPage('clients')">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#555;margin-bottom:8px;">PCP Renewals Due</div>
+        <div style="font-size:28px;font-weight:700;color:#555;">4</div>
+        <div style="font-size:12px;color:#777;margin-top:4px;">Within next 30 days</div>
+      </div>
+    </div>
+    <div style="margin-top:12px;background:#fff;padding:16px;max-width:900px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#555;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #eee;">Recent Activity</div>
+      <div style="font-size:12px;color:#444;padding:6px 0;border-bottom:1px solid #f0f0f0;">Monthly Progress Note submitted — Morales, Diana R. — <span style="color:#999;">10/28/2026</span></div>
+      <div style="font-size:12px;color:#444;padding:6px 0;border-bottom:1px solid #f0f0f0;">Monthly Progress Note submitted — Castillo, Miguel A. — <span style="color:#999;">10/30/2026</span></div>
+      <div style="font-size:12px;color:#444;padding:6px 0;border-bottom:1px solid #f0f0f0;">Monthly Progress Note submitted — Ibarra, Lucia N. — <span style="color:#999;">10/29/2026</span></div>
+      <div style="font-size:12px;color:#444;padding:6px 0;border-bottom:1px solid #f0f0f0;"><span style="color:#c00;font-weight:700;">⚠</span> Monthly note overdue — Beaumont, Cora L. (Oct 2026) — <span style="color:#999;">flagged 10/27/2026</span></div>
+      <div style="font-size:12px;color:#444;padding:6px 0;border-bottom:1px solid #f0f0f0;">Prior Authorization approved — Personal Attendant Services — Morales, Diana R. — <span style="color:#999;">10/15/2026</span></div>
+      <div style="font-size:12px;color:#444;padding:6px 0;border-bottom:1px solid #f0f0f0;">H&P Evaluation uploaded — Dr. Reyes, M. — Morales, Diana R. — <span style="color:#999;">10/10/2026</span></div>
+      <div style="font-size:12px;color:#444;padding:6px 0;border-bottom:1px solid #f0f0f0;"><span style="color:#c00;font-weight:700;">⚠</span> LOC Assessment expiring Nov 15 — Hartley, Samuel W. — <span style="color:#999;">alert generated 10/15/2026</span></div>
+      <div style="font-size:12px;color:#444;padding:6px 0;border-bottom:1px solid #f0f0f0;">PCP Renewal initiated — Delgado, Yvonne M. — <span style="color:#999;">10/01/2026</span></div>
+      <div style="font-size:12px;color:#444;padding:6px 0;">Annual PCP meeting completed — Morales, Diana R. — <span style="color:#999;">09/06/2026</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: CLIENTS ==================== -->
+<div id="page-clients" class="page active">
+  <!-- CLIENTS SEARCH VIEW -->
+  <div id="view-search" class="view">
+    <div class="search-layout">
+      <div class="search-panel">
+        <div class="panel-title">
+          CLIENTS SEARCH
+          <span class="collapse-btn">&#8249;</span>
+        </div>
+        <div class="search-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Date of Birth:</label>
+              <input type="text" placeholder="MM/DD/YYYY">
+            </div>
+            <div class="form-group">
+              <label>Phone #:</label>
+              <input type="text" placeholder="(555) 555-5555">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Last Name:</label>
+              <input type="text" id="search-last">
+            </div>
+            <div class="form-group">
+              <label>First Name:</label>
+              <input type="text" id="search-first">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Client ID:</label>
+              <input type="text">
+            </div>
+            <div class="form-group">
+              <label>MA #:</label>
+              <input type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Client Region:</label>
+              <div class="multi-select"><span>All selected (5)</span> ▾</div>
+            </div>
+            <div class="form-group">
+              <label>Enrolled Program:</label>
+              <div class="multi-select"><span>All selected (9)</span> ▾</div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Client MA Eligible:</label>
+              <div class="multi-select"><span>All selected (2)</span> ▾</div>
+            </div>
+            <div class="form-group">
+              <label>Jurisdiction:</label>
+              <div class="multi-select"><span>All selected (25)</span> ▾</div>
+            </div>
+          </div>
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Provider # / Provider Name:</label>
+              <div class="multi-select"><span>All selected (15)</span> ▾</div>
+            </div>
+          </div>
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Waiver Eligibility:</label>
+              <div class="multi-select"><span>All selected (2)</span> ▾</div>
+            </div>
+          </div>
+        </div>
+        <div class="search-actions">
+          <button class="btn-reset" onclick="document.getElementById('search-last').value='';document.getElementById('search-first').value='';">Reset</button>
+          <button class="btn-search" onclick="showView('view-results')">Search</button>
+        </div>
+      </div>
+      <div class="results-panel">
+        <div class="results-header">
+          <span>MY CASELOAD — 34 ACTIVE CLIENTS &nbsp;<span style="font-weight:400;opacity:.75;font-size:11px;">Region 7 · Vega, Patricia L. (CCS)</span></span>
+          <button class="sort-btn">Sort By ▾</button>
+        </div>
+        <table class="caseload-table" id="caseload-main">
+          <thead>
+            <tr>
+              <th>Client Name</th>
+              <th>Client ID</th>
+              <th>DOB</th>
+              <th>Program</th>
+              <th>County</th>
+              <th>Plan Status</th>
+              <th>Last Note</th>
+              <th>Alert</th>
+            </tr>
+          </thead>
+          <tbody id="caseload-body-main">
+            <tr class="client-row" onclick="showView('view-detail',this)">
+              <td><span class="client-name">Morales, Diana R.</span></td>
+              <td>TX-4481209EK883014</td><td>03/14/1968</td><td>CLASS</td><td>Travis</td>
+              <td><span class="status-badge approved">Active</span></td>
+              <td><span class="last-note">10/28/2026</span></td>
+              <td><span class="status-badge pending" style="font-size:10px;">2 Auth Pending</span></td>
+            </tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Aguilar, Roberto S.</span></td><td>TX-3302187FK771022</td><td>05/29/1951</td><td>CLASS</td><td>Travis</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/25/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Beaumont, Cora L.</span></td><td>TX-5519034GH992108</td><td>11/02/1944</td><td>STAR+PLUS</td><td>Hays</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/22/2026</span></td><td><span class="status-badge denied" style="font-size:10px;">Note Overdue</span></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Castillo, Miguel A.</span></td><td>TX-7741029DK114033</td><td>08/17/1979</td><td>CLASS</td><td>Travis</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/30/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Delgado, Yvonne M.</span></td><td>TX-2204761BJ883057</td><td>02/28/1963</td><td>CLASS</td><td>Bastrop</td><td><span class="status-badge pending">Renewal Due</span></td><td><span class="last-note">09/30/2026</span></td><td><span class="status-badge pending" style="font-size:10px;">PCP Due 11/01</span></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Espinoza, James T.</span></td><td>TX-9908832LM220019</td><td>07/04/1957</td><td>STAR+PLUS</td><td>Travis</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/18/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Franklin, Darlene K.</span></td><td>TX-1133047NP550044</td><td>04/12/1948</td><td>CLASS</td><td>Caldwell</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/28/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Guerrero, Pamela R.</span></td><td>TX-6670293QS881031</td><td>09/22/1971</td><td>CLASS</td><td>Travis</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/15/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Hartley, Samuel W.</span></td><td>TX-4412908TU660027</td><td>01/30/1939</td><td>STAR+PLUS</td><td>Hays</td><td><span class="status-badge active">LOC Due</span></td><td><span class="last-note">10/01/2026</span></td><td><span class="status-badge active" style="font-size:10px;">LOC Exp 11/15</span></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Ibarra, Lucia N.</span></td><td>TX-8823415WX990012</td><td>06/18/1984</td><td>CLASS</td><td>Travis</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/29/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Jefferson, Calvin B.</span></td><td>TX-5541229YZ113088</td><td>12/09/1956</td><td>CLASS</td><td>Travis</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/20/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Kim, Margaret S.</span></td><td>TX-3367012AB440066</td><td>03/07/1947</td><td>STAR+PLUS</td><td>Williamson</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/14/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Lopez, Anthony J.</span></td><td>TX-7789034CD770099</td><td>10/14/1968</td><td>CLASS</td><td>Travis</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/27/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Monroe, Patricia A.</span></td><td>TX-2256781EF220055</td><td>07/31/1952</td><td>STAR+PLUS</td><td>Hays</td><td><span class="status-badge pending">Renewal Due</span></td><td><span class="last-note">09/15/2026</span></td><td><span class="status-badge denied" style="font-size:10px;">Note Overdue</span></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Nguyen, Thanh P.</span></td><td>TX-9934127GH550033</td><td>05/03/1975</td><td>CLASS</td><td>Travis</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/26/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Okafor, Blessing C.</span></td><td>TX-1145029PQ330077</td><td>08/09/1966</td><td>CLASS</td><td>Travis</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/23/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Patel, Anita R.</span></td><td>TX-6678341RS770044</td><td>01/25/1959</td><td>STAR+PLUS</td><td>Williamson</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/17/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Quinn, Daniel M.</span></td><td>TX-4492017TU110022</td><td>06/30/1943</td><td>CLASS</td><td>Travis</td><td><span class="status-badge active">LOC Due</span></td><td><span class="last-note">09/28/2026</span></td><td><span class="status-badge active" style="font-size:10px;">LOC Exp 12/01</span></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Ramirez, Gloria E.</span></td><td>TX-8823671VW990033</td><td>11/14/1977</td><td>CLASS</td><td>Bastrop</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/29/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Stevens, Howard L.</span></td><td>TX-3358924XY440088</td><td>04/07/1950</td><td>STAR+PLUS</td><td>Hays</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/24/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Torres, Isabelle N.</span></td><td>TX-7712056ZA660055</td><td>09/01/1982</td><td>CLASS</td><td>Travis</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/21/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Underwood, James P.</span></td><td>TX-2234781BC220011</td><td>03/19/1936</td><td>STAR+PLUS</td><td>Travis</td><td><span class="status-badge pending">Renewal Due</span></td><td><span class="last-note">09/10/2026</span></td><td><span class="status-badge denied" style="font-size:10px;">Note Overdue</span></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Vasquez, Maria C.</span></td><td>TX-9967834DE880066</td><td>07/22/1974</td><td>CLASS</td><td>Caldwell</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/27/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Wallace, Denise R.</span></td><td>TX-5541209FG550033</td><td>12/03/1961</td><td>CLASS</td><td>Travis</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/19/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Xavier, Thomas E.</span></td><td>TX-1178034HI770099</td><td>05/16/1955</td><td>STAR+PLUS</td><td>Williamson</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/22/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Young, Patricia A.</span></td><td>TX-6623417JK330077</td><td>02/10/1948</td><td>CLASS</td><td>Travis</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/16/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Zimmerman, Carl W.</span></td><td>TX-4490123LM110044</td><td>08/28/1941</td><td>STAR+PLUS</td><td>Hays</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/13/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Adeyemi, Folake T.</span></td><td>TX-8812956NP990022</td><td>10/05/1988</td><td>CLASS</td><td>Travis</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/30/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Burns, Kevin J.</span></td><td>TX-3356129QR440055</td><td>01/17/1964</td><td>CLASS</td><td>Travis</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/25/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Chávez, Rosa L.</span></td><td>TX-7789034ST770011</td><td>06/21/1970</td><td>CLASS</td><td>Bastrop</td><td><span class="status-badge pending">Renewal Due</span></td><td><span class="last-note">09/20/2026</span></td><td><span class="status-badge pending" style="font-size:10px;">PCP Due 11/15</span></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Doran, Eileen M.</span></td><td>TX-2267891UV220088</td><td>04/03/1953</td><td>STAR+PLUS</td><td>Travis</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/20/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Ellis, Marcus D.</span></td><td>TX-9934712WX880066</td><td>11/30/1946</td><td>CLASS</td><td>Williamson</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/18/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Flores, Sandra G.</span></td><td>TX-5578234YZ550033</td><td>07/08/1980</td><td>CLASS</td><td>Travis</td><td><span class="status-badge approved">Active</span></td><td><span class="last-note">10/26/2026</span></td><td></td></tr>
+            <tr class="client-row" onclick="showView('view-detail',this)"><td><span class="client-name">Goldstein, Alan R.</span></td><td>TX-1145678AB330099</td><td>02/14/1958</td><td>STAR+PLUS</td><td>Hays</td><td><span class="status-badge active">LOC Due</span></td><td><span class="last-note">09/05/2026</span></td><td><span class="status-badge denied" style="font-size:10px;">Note Overdue</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS VIEW (filtered) -->
+  <div id="view-results" class="view" style="display:none;">
+    <div class="search-layout">
+      <div class="search-panel">
+        <div class="panel-title">CLIENTS SEARCH <span class="collapse-btn">&#8249;</span></div>
+        <div class="search-form">
+          <div class="form-row">
+            <div class="form-group"><label>Date of Birth:</label><input type="text" placeholder="MM/DD/YYYY"></div>
+            <div class="form-group"><label>Phone #:</label><input type="text" placeholder="(555) 555-5555"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Last Name:</label><input type="text" value="Morales"></div>
+            <div class="form-group"><label>First Name:</label><input type="text" value="Diana"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Client ID:</label><input type="text"></div>
+            <div class="form-group"><label>MA #:</label><input type="text"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Client Region:</label><div class="multi-select"><span>All selected (5)</span> ▾</div></div>
+            <div class="form-group"><label>Enrolled Program:</label><div class="multi-select"><span>All selected (9)</span> ▾</div></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Client MA Eligible:</label><div class="multi-select"><span>All selected (2)</span> ▾</div></div>
+            <div class="form-group"><label>Jurisdiction:</label><div class="multi-select"><span>All selected (25)</span> ▾</div></div>
+          </div>
+          <div class="form-row single">
+            <div class="form-group"><label>Provider # / Provider Name:</label><div class="multi-select"><span>All selected (15)</span> ▾</div></div>
+          </div>
+          <div class="form-row single">
+            <div class="form-group"><label>Waiver Eligibility:</label><div class="multi-select"><span>All selected (2)</span> ▾</div></div>
+          </div>
+        </div>
+        <div class="search-actions">
+          <button class="btn-reset" onclick="showView('view-search')">Clear Filters</button>
+          <button class="btn-search">Search</button>
+        </div>
+      </div>
+      <div class="results-panel">
+        <div class="results-header">
+          <span>FILTERED RESULTS — 1 of 34 clients</span>
+          <button class="sort-btn">Sort By ▾</button>
+        </div>
+        <table class="caseload-table">
+          <thead>
+            <tr>
+              <th>Client Name</th><th>Client ID</th><th>DOB</th><th>Program</th>
+              <th>County</th><th>Plan Status</th><th>Last Note</th><th>Alert</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="client-row highlighted" onclick="showView('view-detail',this)">
+              <td><span class="client-name">Morales, Diana R.</span></td>
+              <td>TX-4481209EK883014</td><td>03/14/1968</td><td>CLASS</td><td>Travis</td>
+              <td><span class="status-badge approved">Active</span></td>
+              <td><span class="last-note">10/28/2026</span></td>
+              <td><span class="status-badge pending" style="font-size:10px;">2 Auth Pending</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- DETAIL VIEW -->
+  <div id="view-detail" class="view" style="display:none;">
+    <div class="title-bar">
+      CLIENT INFORMATION FOR MORALES, DIANA R.
+      <span class="close-btn" onclick="showView('view-results')">✕</span>
+    </div>
+    <div class="client-meta">
+      <div class="meta-item"><span class="label">Client LTSS ID #:</span><span class="value">TX-4481209EK883014</span></div>
+      <div class="meta-item"><span class="label">Current MA#:</span><span class="value">72904415882</span></div>
+      <div class="meta-item"><span class="label">POS/PCP Program:</span><span class="value plain">CLASS</span></div>
+      <div class="meta-item"><span class="label">Enrolled In:</span><span class="value plain">CLASS</span></div>
+      <div class="meta-item"><span class="label">MA Eligible:</span><span class="value plain">Yes</span></div>
+      <div class="meta-item"><span class="label">Waiver:</span><span class="value plain">STAR+PLUS</span></div>
+      <div class="conf-note">De-identified — details modified for confidentiality</div>
+    </div>
+    <div class="body-row">
+      <div class="sidebar">
+        <div class="sidebar-item nav-item" data-detail="profile">CLIENT PROFILE</div>
+        <div class="sidebar-item nav-item active" data-detail="plans">SERVICE PLANS</div>
+        <div class="sidebar-item nav-item" data-detail="notes">NOTES</div>
+        <div class="sidebar-item nav-item" data-detail="assessments">ASSESSMENTS</div>
+        <div class="sidebar-item nav-item" data-detail="documents">DOCUMENTS</div>
+        <div class="sidebar-item nav-item" data-detail="priorauth">PRIOR AUTH</div>
+      </div>
+      <div class="main-content" style="padding:0;">
+
+        <!-- PROFILE DETAIL -->
+        <div id="detail-profile" class="detail-section" style="display:none;">
+          <div class="section-card">
+            <div class="section-header">CLIENT PROFILE <div class="header-actions"><button class="btn-outline">Expand All</button></div></div>
+            <div class="accordion-item">
+              <div class="accordion-title open"><span class="arrow">&#9660;</span>CLIENT DEMOGRAPHIC OVERVIEW</div>
+              <div class="accordion-content open">
+                <div class="info-grid">
+                  <div><div class="field-label">Participant Name:</div><div class="field-value">Morales, Diana R.</div></div>
+                  <div><div class="field-label">Date of Birth:</div><div class="field-value">03/14/1968</div></div>
+                  <div><div class="field-label">Age:</div><div class="field-value">56</div></div>
+                  <div><div class="field-label">Primary Language:</div><div class="field-value">English</div></div>
+                  <div><div class="field-label">Client ID:</div><div class="field-value">TX-4481209EK883014</div></div>
+                  <div><div class="field-label">MA#:</div><div class="field-value">72904415882</div></div>
+                  <div><div class="field-label">Primary Phone#:</div><div class="field-value">(512) 774-0293</div></div>
+                  <div><div class="field-label">Current Address:</div><div class="field-value">4412 Rosewood Trail, Austin, TX 78745</div></div>
+                  <div><div class="field-label">Meets Definition of Community Setting?</div><div class="field-value">Yes</div></div>
+                  <div><div class="field-label">Medicaid Category:</div><div class="field-value">Aged, Blind, Disabled</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <div class="accordion-title"><span class="arrow">&#9658;</span>ADDRESS TO RECEIVE SERVICES</div>
+              <div class="accordion-content"></div>
+            </div>
+            <div class="accordion-item">
+              <div class="accordion-title"><span class="arrow">&#9658;</span>WAIVER / PROGRAM ENROLLMENT STATUS</div>
+              <div class="accordion-content"></div>
+            </div>
+            <div class="accordion-item">
+              <div class="accordion-title"><span class="arrow">&#9658;</span>CURRENT ASSIGNMENTS</div>
+              <div class="accordion-content"></div>
+            </div>
+            <div class="accordion-item">
+              <div class="accordion-title"><span class="arrow">&#9658;</span>REPRESENTATIVES</div>
+              <div class="accordion-content"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SERVICE PLANS DETAIL -->
+        <div id="detail-plans" class="detail-section">
+          <div class="section-card">
+            <div class="section-header">PERSON CENTERED PLAN — DETAILS
+              <div class="header-actions">
+                <button class="btn-outline" onclick="showView('view-results')">&#8592; Back to List</button>
+                <button class="btn-outline">Expand All</button>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <div class="accordion-title open"><span class="arrow">&#9660;</span>CLIENT INFORMATION</div>
+              <div class="accordion-content open">
+                <div class="info-grid">
+                  <div><div class="field-label">Participant Name:</div><div class="field-value">Morales, Diana R.</div></div>
+                  <div><div class="field-label">Nickname / AKA:</div><div class="field-value">Dina</div></div>
+                  <div><div class="field-label">Date of Birth:</div><div class="field-value">03/14/1968</div></div>
+                  <div><div class="field-label">Age:</div><div class="field-value">56</div></div>
+                  <div><div class="field-label">Client ID:</div><div class="field-value">TX-4481209EK883014</div></div>
+                  <div><div class="field-label">MA#:</div><div class="field-value">72904415882</div></div>
+                  <div><div class="field-label">Primary Phone#:</div><div class="field-value">(512) 774-0293</div></div>
+                  <div><div class="field-label">Current Address:</div><div class="field-value">4412 Rosewood Trail, Austin, TX 78745</div></div>
+                  <div><div class="field-label">Meets Definition of Community Setting?</div><div class="field-value">Yes</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <div class="accordion-title open"><span class="arrow">&#9660;</span>PLAN DETAILS</div>
+              <div class="accordion-content open">
+                <div class="info-grid">
+                  <div><div class="field-label">Program Type:</div><div class="field-value">CLASS</div></div>
+                  <div><div class="field-label">Meeting Date:</div><div class="field-value">09/06/2023</div></div>
+                  <div><div class="field-label">Annual PCP Date:</div><div class="field-value">09/06/2024</div></div>
+                  <div><div class="field-label">Create Date:</div><div class="field-value">09/06/2023</div></div>
+                  <div><div class="field-label">Effective Date:</div><div class="field-value">09/06/2023</div></div>
+                  <div><div class="field-label">End Date:</div><div class="field-value">--</div></div>
+                  <div><div class="field-label">Plan Type:</div><div class="field-value">Annual PCP</div></div>
+                  <div><div class="field-label">Is Urgent?</div><div class="field-value">No</div></div>
+                  <div><div class="field-label">Monthly Monitoring Required?</div><div class="field-value">No</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <div class="accordion-title open"><span class="arrow">&#9660;</span>PLAN CONTACTS</div>
+              <div class="accordion-content open">
+                <table class="contacts-table">
+                  <thead><tr><th>Role</th><th>Name</th><th>Agency / Organization</th><th>Phone Number</th><th>Email</th></tr></thead>
+                  <tbody>
+                    <tr><td>Case Manager (CCS)</td><td>Vega, Patricia L.</td><td>HHSC Region 7</td><td>(512) 483-0016</td><td>pvega@hhsc.state.tx.us</td></tr>
+                    <tr><td>Direct Service Agency</td><td>Ruiz, Carmen M.</td><td>Lone Star Home Health Agency</td><td>(512) 902-4410</td><td>c.ruiz@lonestarhealth.org</td></tr>
+                    <tr><td>Financial Management Service</td><td>--</td><td>TMHP Financial Services</td><td>(800) 925-9126</td><td>--</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <div class="accordion-title open"><span class="arrow">&#9660;</span>SUMMARY</div>
+              <div class="accordion-content open">
+                <div class="summary-text">Diana resides independently in south Austin with support from her sister, who visits 3 times per week. She has used a power wheelchair for 11 years and manages her own scheduling with reminder prompts. Diana's primary goals for this plan year are to maintain employment at her part-time clerical position, increase participation in a community gardening program, and reduce reliance on emergency services for personal care backup. Her care team has identified gaps in overnight support coverage and transportation to specialty appointments as priorities for this service plan cycle.</div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <div class="accordion-title open"><span class="arrow">&#9660;</span>OUTCOMES</div>
+              <div class="accordion-content open">
+                <table class="outcome-table">
+                  <thead><tr><th>Outcome Category</th><th>Outcome</th><th>Outcome Description</th><th>Requested Services</th></tr></thead>
+                  <tbody>
+                    <tr><td>My Choices</td><td>I live where I choose</td><td>Diana will continue living in her home with appropriate support services in place to ensure safety and independence.</td><td>Personal Attendant Services, Respite</td></tr>
+                    <tr><td>My Community</td><td>I participate in community activities</td><td>Diana will attend the Barton Springs Community Garden program at least twice per month with transportation support as needed.</td><td>Day Habilitation, Transportation</td></tr>
+                    <tr><td>My Health and Safety</td><td>I am safe</td><td>Diana will have a backup personal attendant available within 2 hours in the event of a primary attendant absence.</td><td>Personal Attendant Services</td></tr>
+                    <tr><td>My Employment</td><td>I work in a job I choose</td><td>Diana will maintain her part-time administrative position (Mon, Wed, Fri) with supported transportation and job coaching as needed.</td><td>Supported Employment, Transportation</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <div class="accordion-title open"><span class="arrow">&#9660;</span>DETAILED OUTCOMES</div>
+              <div class="accordion-content open">
+                <table class="outcome-table">
+                  <thead><tr><th>Outcome</th><th>Action Step</th><th>Responsible Party</th><th>Target Date</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <tr><td>I live where I choose</td><td>Confirm primary and backup attendant schedules monthly and document any coverage gaps.</td><td>Case Manager (CCS)</td><td>10/06/2023</td><td><span class="status-badge active">In Progress</span></td></tr>
+                    <tr><td>I participate in community activities</td><td>Coordinate transportation to Barton Springs Community Garden on 1st and 3rd Saturday each month.</td><td>Direct Service Agency</td><td>10/07/2023</td><td><span class="status-badge approved">Completed</span></td></tr>
+                    <tr><td>I am safe</td><td>Establish emergency backup attendant contact list and review at each quarterly monitoring visit.</td><td>Case Manager (CCS)</td><td>12/06/2023</td><td><span class="status-badge active">In Progress</span></td></tr>
+                    <tr><td>I work in a job I choose</td><td>Provide job coaching support on first day of each month and document employer feedback.</td><td>Direct Service Agency</td><td>10/06/2023</td><td><span class="status-badge approved">Completed</span></td></tr>
+                    <tr><td>I am safe</td><td>Review and update emergency contacts and crisis plan at annual PCP meeting.</td><td>Case Manager (CCS)</td><td>09/06/2024</td><td><span class="status-badge pending">Pending</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <div class="accordion-title open"><span class="arrow">&#9660;</span>SERVICE AUTHORIZATION</div>
+              <div class="accordion-content open" style="padding-left:16px;">
+                <table class="data-table">
+                  <thead><tr><th>Plan Type &amp; Effective Date</th><th>Billing Unit</th><th>Service and Provider</th><th>Oct</th><th>Nov</th><th>Dec</th><th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Annual Service Cost</th></tr></thead>
+                  <tbody>
+                    <tr><td>Annual — 09/06/2023</td><td>Fifteen Minute</td><td class="link">Personal Attendant Services — Lone Star Home Health Agency</td><td class="center">480</td><td class="center">420</td><td class="center">480</td><td class="center">460</td><td class="center">420</td><td class="center">480</td><td class="center">440</td><td class="center">480</td><td class="center">440</td><td class="center">480</td><td class="center">460</td><td class="center">440</td><td class="center" style="font-weight:600;">$38,220.00</td></tr>
+                    <tr><td>Annual — 09/06/2023</td><td>Hourly</td><td class="link">Day Habilitation — Lone Star Home Health Agency</td><td class="center">96</td><td class="center">88</td><td class="center">96</td><td class="center">88</td><td class="center">80</td><td class="center">96</td><td class="center">88</td><td class="center">96</td><td class="center">88</td><td class="center">96</td><td class="center">88</td><td class="center">80</td><td class="center" style="font-weight:600;">$54,912.00</td></tr>
+                    <tr><td>Annual — 09/06/2023</td><td>Milestone</td><td class="link">Supported Employment — Job Development — Lone Star Home Health Agency</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center" style="font-weight:600;">$1,440.00</td></tr>
+                    <tr><td>Annual — 09/06/2023</td><td>Upper Pay Limit</td><td class="link">Adaptive Aids — Lone Star Home Health Agency</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center" style="font-weight:600;">$3,000.00</td></tr>
+                    <tr><td>Annual — 09/06/2023</td><td>Upper Pay Limit</td><td class="link">Minor Home Modifications — Lone Star Home Health Agency</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center" style="font-weight:600;">$2,200.00</td></tr>
+                    <tr><td>Annual — 09/06/2023</td><td>Fifteen Minute</td><td class="link">Respite Services (In-Home) — Lone Star Home Health Agency</td><td class="center">64</td><td class="center">56</td><td class="center">64</td><td class="center">56</td><td class="center">48</td><td class="center">64</td><td class="center">56</td><td class="center">64</td><td class="center">56</td><td class="center">64</td><td class="center">56</td><td class="center">48</td><td class="center" style="font-weight:600;">$8,960.00</td></tr>
+                    <tr><td>Annual — 09/06/2023</td><td>Hourly</td><td class="link">Transportation — Lone Star Home Health Agency</td><td class="center">0</td><td class="center">0</td><td class="center">0</td><td class="center">0</td><td class="center">0</td><td class="center">0</td><td class="center">0</td><td class="center">4</td><td class="center">4</td><td class="center">4</td><td class="center">4</td><td class="center">4</td><td class="center" style="font-weight:600;">$880.00</td></tr>
+                  </tbody>
+                </table>
+                <div class="cost-summary">
+                  <div class="cost-row"><span class="cost-label">Annual Waiver Plan Services Total:</span><span class="cost-value">$109,612.00</span></div>
+                  <div class="cost-row"><span class="cost-label">State-Only Funded Services Total:</span><span class="cost-value">$0.00</span></div>
+                  <div class="cost-row cost-total"><span class="cost-label">Service Provider Plan Year Cost:</span><span class="cost-value">$109,612.00</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <div class="accordion-title open"><span class="arrow">&#9660;</span>SIGNATURES</div>
+              <div class="accordion-content open" style="padding-left:16px;">
+                <table class="sig-table">
+                  <thead><tr><th>Signature From</th><th>Signature Name</th><th>Provider</th><th>Signature Date</th><th>Signature Document</th><th>Updated Signature Needed</th></tr></thead>
+                  <tbody>
+                    <tr><td>Provider</td><td>Provider Rep</td><td>Lone Star Home Health Agency</td><td>09/10/2023</td><td><span class="pdf-link">Personal Attendant Services 883014.pdf</span></td><td>No</td></tr>
+                    <tr><td>Provider</td><td>Provider Rep</td><td>Lone Star Home Health Agency</td><td>09/10/2023</td><td><span class="pdf-link">Day Habilitation 883014.pdf</span></td><td>No</td></tr>
+                    <tr><td>Provider</td><td>Provider Rep</td><td>Lone Star Home Health Agency</td><td>09/10/2023</td><td><span class="pdf-link">Respite Services 883014.pdf</span></td><td>No</td></tr>
+                    <tr><td>Participant</td><td>Morales, Diana R.</td><td>--</td><td>09/11/2023</td><td><span class="pdf-link">Participant Signature 883014.pdf</span></td><td>No</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <div class="accordion-title open"><span class="arrow">&#9660;</span>SERVICE PLAN WORKFLOW HISTORY</div>
+              <div class="accordion-content open" style="padding-left:16px;">
+                <table class="workflow-table">
+                  <thead><tr><th>Action</th><th>By</th><th>Date</th><th>From Status</th><th>To Status</th></tr></thead>
+                  <tbody>
+                    <tr><td>Approve</td><td>Regional Program Supervisor</td><td>09/15/2023 14:32:07</td><td>Pending Regional Program Staff Review</td><td><span class="status-badge approved">Approved</span></td></tr>
+                    <tr><td>Submit for Review</td><td>Vega, Patricia L. (CCS)</td><td>09/12/2023 09:18:44</td><td>In Progress</td><td>Pending Regional Program Staff Review</td></tr>
+                    <tr><td>Provider Acceptance</td><td>Provider Rep — Lone Star Home Health Agency</td><td>09/10/2023 11:05:22</td><td>Pending Acceptance</td><td>Accepted by Provider (pending approval)</td></tr>
+                    <tr><td>Created</td><td>Vega, Patricia L. (CCS)</td><td>09/06/2023 10:00:00</td><td>--</td><td><span class="status-badge active">In Progress</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <div class="accordion-title open"><span class="arrow">&#9660;</span>PROVIDER ACCEPTANCE WORKFLOW HISTORY</div>
+              <div class="accordion-content open" style="padding-left:16px;">
+                <table class="workflow-table">
+                  <thead><tr><th>Action</th><th>Service and Provider</th><th>By</th><th>Date</th><th>From Review Status</th><th>To Review Status</th></tr></thead>
+                  <tbody>
+                    <tr><td>Accept</td><td>Personal Attendant Services — Lone Star Home Health Agency</td><td>Provider Rep</td><td>09/10/2023 11:05:22</td><td>Pending Acceptance</td><td>Accepted by Provider (pending approval)</td></tr>
+                    <tr><td>Accept</td><td>Day Habilitation — Lone Star Home Health Agency</td><td>Provider Rep</td><td>09/10/2023 11:06:14</td><td>Pending Acceptance</td><td>Accepted by Provider (pending approval)</td></tr>
+                    <tr><td>Accept</td><td>Supported Employment — Lone Star Home Health Agency</td><td>Provider Rep</td><td>09/10/2023 11:07:02</td><td>Pending Acceptance</td><td>Accepted by Provider (pending approval)</td></tr>
+                    <tr><td>Accept</td><td>Respite Services (In-Home) — Lone Star Home Health Agency</td><td>Provider Rep</td><td>09/10/2023 11:07:45</td><td>Pending Acceptance</td><td>Accepted by Provider (pending approval)</td></tr>
+                    <tr><td>Pending</td><td>Transportation — Lone Star Home Health Agency</td><td>CCS Coordinator</td><td>09/06/2023 10:00:00</td><td>New</td><td>Pending Acceptance</td></tr>
+                    <tr><td>Pending</td><td>Minor Home Modifications — Lone Star Home Health Agency</td><td>CCS Coordinator</td><td>09/06/2023 10:00:00</td><td>New</td><td>Pending Acceptance</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTES DETAIL -->
+        <div id="detail-notes" class="detail-section" style="display:none;">
+          <div class="section-card">
+            <div class="section-header">NOTES — MORALES, DIANA R.
+              <div class="header-actions">
+                <button class="btn-outline">Filter By Type ▾</button>
+                <button class="btn-outline" style="background:#f0a800;border-color:#f0a800;">+ Add Note</button>
+              </div>
+            </div>
+            <div style="padding:16px;">
+              <div class="note-card">
+                <div class="note-header">
+                  <div><span class="note-type">Monthly Progress Note</span> <span class="note-meta">— October 2026</span></div>
+                  <div class="note-meta">Vega, Patricia L. (CCS) · 10/28/2026 09:14</div>
+                </div>
+                <div class="note-body">
+                  Diana continues to reside at her home address in south Austin. Primary attendant services provided without interruption during the month. Diana reported satisfaction with current attendant and noted no concerns with scheduling or quality of care.<br><br>
+                  Employment goal remains on track. Diana completed 3 shifts at her clerical position this month (Mon/Wed/Fri as planned). Job coach visit completed 10/06 — employer feedback positive.<br><br>
+                  Community participation: attended Barton Springs Community Garden on 10/05 and 10/19. Transportation coordinated by Lone Star Home Health Agency both dates without issue.<br><br>
+                  <strong>Action items:</strong> Confirm backup attendant contact list updated per Q4 review. Schedule quarterly monitoring call for November.
+                </div>
+                <div class="note-footer">Submitted: 10/28/2026 · Status: <span class="status-badge approved">Submitted</span></div>
+              </div>
+              <div class="note-card">
+                <div class="note-header">
+                  <div><span class="note-type">Quarterly Monitoring</span> <span class="note-meta">— Q3 2026 (July–September)</span></div>
+                  <div class="note-meta">Vega, Patricia L. (CCS) · 09/30/2026 14:45</div>
+                </div>
+                <div class="note-body">
+                  Q3 monitoring completed via in-person visit 09/28/2026. All authorized services delivered as planned. Diana expressed satisfaction with current level of care. No change in functional status noted.<br><br>
+                  Service Authorization review: current authorizations expire 09/05/2024. Annual PCP scheduled 09/06/2026 — renewal process initiated. All providers confirmed participation for upcoming plan year.<br><br>
+                  <strong>Concerns noted:</strong> Diana reported two instances of delayed backup attendant response in August (gaps of 3-4 hours). Escalated to Direct Service Agency for protocol review. Lone Star Home Health Agency confirmed updated backup roster implemented 09/15/2026.<br><br>
+                  LOC reassessment due this quarter — scheduled for 10/12/2026 with Dr. Reyes, M.
+                </div>
+                <div class="note-footer">Submitted: 09/30/2026 · Status: <span class="status-badge approved">Submitted</span></div>
+              </div>
+              <div class="note-card">
+                <div class="note-header">
+                  <div><span class="note-type">Incident Report</span> <span class="note-meta">— August 2026</span></div>
+                  <div class="note-meta">Vega, Patricia L. (CCS) · 08/14/2026 11:02</div>
+                </div>
+                <div class="note-body">
+                  Incident reported by participant 08/12/2026. Primary attendant did not arrive for scheduled morning shift (7:00 AM). Backup attendant reached at 10:30 AM — 3.5 hour gap in coverage. Diana was able to contact family member (sister) who provided interim support.<br><br>
+                  No adverse health outcome reported. Incident attributed to attendant personal emergency — attendant notified agency same morning but communication breakdown delayed backup dispatch.<br><br>
+                  Corrective action: Direct Service Agency to review on-call backup protocol and response time standard (target: 2 hours or less). Follow-up review scheduled 09/01/2026.
+                </div>
+                <div class="note-footer">Submitted: 08/14/2026 · Status: <span class="status-badge approved">Submitted</span> · <span style="color:#c00;font-weight:700;">Incident</span></div>
+              </div>
+              <div class="note-card">
+                <div class="note-header">
+                  <div><span class="note-type">Initial Assessment Note</span> <span class="note-meta">— Plan Year Open</span></div>
+                  <div class="note-meta">Vega, Patricia L. (CCS) · 09/06/2023 10:30</div>
+                </div>
+                <div class="note-body">
+                  Annual PCP meeting completed 09/06/2023. Diana participated with her sister (Rosa Morales) as support person. All plan goals reviewed and updated. Diana confirmed preferences regarding attendant schedule, community activities, and employment support. No changes to medical status since last review.<br><br>
+                  New service authorizations effective 09/06/2023. Informed consent obtained. Participant signature collected 09/11/2023.
+                </div>
+                <div class="note-footer">Submitted: 09/06/2023 · Status: <span class="status-badge approved">Submitted</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ASSESSMENTS DETAIL -->
+        <div id="detail-assessments" class="detail-section" style="display:none;">
+          <div class="section-card">
+            <div class="section-header">ASSESSMENTS — MORALES, DIANA R.
+              <div class="header-actions">
+                <button class="btn-outline">Assessment History</button>
+              </div>
+            </div>
+            <div style="padding:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <div style="font-size:12px;color:#555;">
+                  <strong>Level of Care Assessment</strong> &nbsp;·&nbsp; Completed: 10/12/2026 &nbsp;·&nbsp; Assessor: Dr. Reyes, M. (Attending Physician)
+                </div>
+                <span class="status-badge approved">Completed</span>
+              </div>
+              <div class="loc-domain">
+                <div class="domain-header">Activities of Daily Living (ADL) <div class="score">Score: 18 / 24</div></div>
+                <div class="domain-body">
+                  <div class="criterion"><span class="crit-label">Bathing / Grooming</span><span class="crit-value">Requires substantial assistance (3)</span></div>
+                  <div class="criterion"><span class="crit-label">Dressing</span><span class="crit-value">Requires some assistance (2)</span></div>
+                  <div class="criterion"><span class="crit-label">Eating / Feeding</span><span class="crit-value">Independent (0)</span></div>
+                  <div class="criterion"><span class="crit-label">Mobility / Transfers</span><span class="crit-value">Dependent — power wheelchair (4)</span></div>
+                  <div class="criterion"><span class="crit-label">Toileting</span><span class="crit-value">Requires substantial assistance (3)</span></div>
+                  <div class="criterion"><span class="crit-label">Continence</span><span class="crit-value">Occasional incontinence — managed (2)</span></div>
+                </div>
+              </div>
+              <div class="loc-domain">
+                <div class="domain-header">Instrumental Activities of Daily Living (IADL) <div class="score">Score: 10 / 16</div></div>
+                <div class="domain-body">
+                  <div class="criterion"><span class="crit-label">Meal Preparation</span><span class="crit-value">Requires some assistance (2)</span></div>
+                  <div class="criterion"><span class="crit-label">Housekeeping</span><span class="crit-value">Requires substantial assistance (3)</span></div>
+                  <div class="criterion"><span class="crit-label">Transportation</span><span class="crit-value">Dependent on adapted transport (3)</span></div>
+                  <div class="criterion"><span class="crit-label">Medication Management</span><span class="crit-value">Independent — uses pill organizer (0)</span></div>
+                  <div class="criterion"><span class="crit-label">Financial Management</span><span class="crit-value">Independent (0)</span></div>
+                  <div class="criterion"><span class="crit-label">Communication / Technology</span><span class="crit-value">Independent (0)</span></div>
+                </div>
+              </div>
+              <div class="loc-domain">
+                <div class="domain-header">Behavioral / Cognitive Status <div class="score">Score: 2 / 16</div></div>
+                <div class="domain-body">
+                  <div class="criterion"><span class="crit-label">Memory / Orientation</span><span class="crit-value">No impairment (0)</span></div>
+                  <div class="criterion"><span class="crit-label">Decision-Making</span><span class="crit-value">Independent (0)</span></div>
+                  <div class="criterion"><span class="crit-label">Behavioral Symptoms</span><span class="crit-value">Occasional anxiety — managed (2)</span></div>
+                  <div class="criterion"><span class="crit-label">Communication</span><span class="crit-value">No impairment (0)</span></div>
+                </div>
+              </div>
+              <div class="loc-domain">
+                <div class="domain-header">Medical / Clinical Needs <div class="score">Score: 6 / 12</div></div>
+                <div class="domain-body">
+                  <div class="criterion"><span class="crit-label">Skin Integrity / Wound Care</span><span class="crit-value">No active wound — pressure risk monitoring (2)</span></div>
+                  <div class="criterion"><span class="crit-label">Medication Administration</span><span class="crit-value">Self-administered (0)</span></div>
+                  <div class="criterion"><span class="crit-label">Respiratory / Equipment</span><span class="crit-value">No respiratory needs (0)</span></div>
+                  <div class="criterion"><span class="crit-label">Specialized Therapy Needs</span><span class="crit-value">PT/OT — monthly (2)</span></div>
+                  <div class="criterion"><span class="crit-label">Physician Oversight</span><span class="crit-value">Chronic conditions — quarterly visits (2)</span></div>
+                </div>
+              </div>
+              <div class="loc-summary">
+                <div>
+                  <div class="total-label">Total LOC Score</div>
+                  <div class="eligibility">Eligibility determination: Meets CLASS waiver criteria</div>
+                </div>
+                <div class="total-score">36 / 68</div>
+              </div>
+              <div style="margin-top:12px;font-size:12px;color:#555;line-height:1.6;">
+                <strong>Assessor Notes:</strong> Diana presents with stable functional status consistent with prior assessment (2022 score: 34). Increased mobility dependence noted following power wheelchair calibration issues in Q2 2026 — resolved. Recommend continued CLASS waiver services at current authorization level. Reassessment due October 2027.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DOCUMENTS DETAIL -->
+        <div id="detail-documents" class="detail-section" style="display:none;">
+          <div class="section-card">
+            <div class="section-header">DOCUMENTS &amp; UPLOADS — MORALES, DIANA R.
+              <div class="header-actions">
+                <button class="btn-outline" style="background:#f0a800;border-color:#f0a800;">+ Upload Document</button>
+              </div>
+            </div>
+            <div style="padding:16px;">
+              <div class="doc-upload-bar">
+                <label style="font-size:12px;font-weight:600;color:#444;">Document Type:</label>
+                <select>
+                  <option>-- Select Type --</option>
+                  <option>H&P Evaluation</option>
+                  <option>Physician Order</option>
+                  <option>Lab Results</option>
+                  <option>Insurance / Coverage</option>
+                  <option>Consent Form</option>
+                  <option>Incident Report</option>
+                  <option>Other</option>
+                </select>
+                <label style="font-size:12px;font-weight:600;color:#444;">Filter by Date:</label>
+                <input type="text" placeholder="MM/DD/YYYY" style="border:1px solid #ccc;padding:4px 8px;font-size:12px;height:28px;width:120px;">
+                <button class="upload-btn">Upload File</button>
+              </div>
+              <table class="doc-table">
+                <thead>
+                  <tr><th>Document Type</th><th>File Name</th><th>Uploaded By</th><th>Date Uploaded</th><th>Plan Year</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>H&P Evaluation</td>
+                    <td><span class="doc-icon">PDF</span><span class="doc-link">HP_Morales_DR_10102026.pdf</span></td>
+                    <td>Dr. Reyes, M. (Attending Physician)</td>
+                    <td>10/10/2026</td>
+                    <td>2026–2027</td>
+                    <td><span class="status-badge approved">Active</span></td>
+                    <td><span class="doc-link">View</span> · <span class="doc-link">Download</span></td>
+                  </tr>
+                  <tr>
+                    <td>Physician Order — Transportation</td>
+                    <td><span class="doc-icon">PDF</span><span class="doc-link">PhysOrder_Transport_09062026.pdf</span></td>
+                    <td>Dr. Reyes, M. (Attending Physician)</td>
+                    <td>09/06/2026</td>
+                    <td>2026–2027</td>
+                    <td><span class="status-badge approved">Active</span></td>
+                    <td><span class="doc-link">View</span> · <span class="doc-link">Download</span></td>
+                  </tr>
+                  <tr>
+                    <td>Consent Form — Annual PCP</td>
+                    <td><span class="doc-icon">PDF</span><span class="doc-link">Consent_PCP_Morales_09112023.pdf</span></td>
+                    <td>Vega, Patricia L. (CCS)</td>
+                    <td>09/11/2023</td>
+                    <td>2023–2024</td>
+                    <td><span class="status-badge active">Archived</span></td>
+                    <td><span class="doc-link">View</span> · <span class="doc-link">Download</span></td>
+                  </tr>
+                  <tr>
+                    <td>H&P Evaluation</td>
+                    <td><span class="doc-icon">PDF</span><span class="doc-link">HP_Morales_DR_09012023.pdf</span></td>
+                    <td>Dr. Reyes, M. (Attending Physician)</td>
+                    <td>09/01/2023</td>
+                    <td>2023–2024</td>
+                    <td><span class="status-badge active">Archived</span></td>
+                    <td><span class="doc-link">View</span> · <span class="doc-link">Download</span></td>
+                  </tr>
+                  <tr>
+                    <td>Incident Report</td>
+                    <td><span class="doc-icon">PDF</span><span class="doc-link">Incident_Morales_08142026.pdf</span></td>
+                    <td>Vega, Patricia L. (CCS)</td>
+                    <td>08/14/2026</td>
+                    <td>2026–2027</td>
+                    <td><span class="status-badge approved">Filed</span></td>
+                    <td><span class="doc-link">View</span> · <span class="doc-link">Download</span></td>
+                  </tr>
+                  <tr>
+                    <td>Lab Results — Annual Panel</td>
+                    <td><span class="doc-icon">PDF</span><span class="doc-link">Labs_Morales_07152026.pdf</span></td>
+                    <td>TMHP Lab Services</td>
+                    <td>07/15/2026</td>
+                    <td>2026–2027</td>
+                    <td><span class="status-badge approved">Reviewed</span></td>
+                    <td><span class="doc-link">View</span> · <span class="doc-link">Download</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRIOR AUTH DETAIL -->
+        <div id="detail-priorauth" class="detail-section" style="display:none;">
+          <div class="section-card">
+            <div class="section-header">PRIOR AUTHORIZATIONS — MORALES, DIANA R.
+              <div class="header-actions">
+                <button class="btn-outline">Filter Status ▾</button>
+                <button class="btn-outline" style="background:#f0a800;border-color:#f0a800;">+ New Request</button>
+              </div>
+            </div>
+            <div style="padding:16px;">
+              <table class="auth-table">
+                <thead>
+                  <tr><th>Auth #</th><th>Service</th><th>Provider</th><th>Requested</th><th>Effective Date</th><th>End Date</th><th>Units Requested</th><th>Units Approved</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="auth-link">PA-2026-00441</span></td>
+                    <td>Personal Attendant Services</td>
+                    <td>Lone Star Home Health Agency</td>
+                    <td>08/20/2026</td>
+                    <td>09/06/2026</td>
+                    <td>09/05/2027</td>
+                    <td>5,280 units (15-min)</td>
+                    <td>5,280 units</td>
+                    <td><span class="status-badge approved">Approved</span></td>
+                    <td><span class="auth-link">View</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="auth-link">PA-2026-00442</span></td>
+                    <td>Day Habilitation</td>
+                    <td>Lone Star Home Health Agency</td>
+                    <td>08/20/2026</td>
+                    <td>09/06/2026</td>
+                    <td>09/05/2027</td>
+                    <td>1,056 hrs</td>
+                    <td>1,056 hrs</td>
+                    <td><span class="status-badge approved">Approved</span></td>
+                    <td><span class="auth-link">View</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="auth-link">PA-2026-00443</span></td>
+                    <td>Minor Home Modifications — Ramp Reinforcement</td>
+                    <td>Lone Star Home Health Agency</td>
+                    <td>09/15/2026</td>
+                    <td>--</td>
+                    <td>--</td>
+                    <td>$2,200 (Upper Pay Limit)</td>
+                    <td>--</td>
+                    <td><span class="status-badge pending">Pending Review</span></td>
+                    <td><span class="auth-link">View</span> · <span class="auth-link">Edit</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="auth-link">PA-2026-00444</span></td>
+                    <td>Adaptive Aids — Power Wheelchair Maintenance</td>
+                    <td>Lone Star Home Health Agency</td>
+                    <td>10/01/2026</td>
+                    <td>--</td>
+                    <td>--</td>
+                    <td>$3,000 (Upper Pay Limit)</td>
+                    <td>--</td>
+                    <td><span class="status-badge pending">Pending Review</span></td>
+                    <td><span class="auth-link">View</span> · <span class="auth-link">Edit</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="auth-link">PA-2025-00318</span></td>
+                    <td>Personal Attendant Services</td>
+                    <td>Lone Star Home Health Agency</td>
+                    <td>08/15/2025</td>
+                    <td>09/06/2025</td>
+                    <td>09/05/2026</td>
+                    <td>5,040 units (15-min)</td>
+                    <td>5,040 units</td>
+                    <td><span class="status-badge active">Expired</span></td>
+                    <td><span class="auth-link">View</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="auth-link">PA-2024-00210</span></td>
+                    <td>Adaptive Aids — Power Wheelchair</td>
+                    <td>Lone Star Home Health Agency</td>
+                    <td>04/10/2024</td>
+                    <td>05/01/2024</td>
+                    <td>04/30/2025</td>
+                    <td>$2,800</td>
+                    <td>$2,800</td>
+                    <td><span class="status-badge active">Expired</span></td>
+                    <td><span class="auth-link">View</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="auth-link">PA-2023-00088</span></td>
+                    <td>Respite Services (In-Home)</td>
+                    <td>Lone Star Home Health Agency</td>
+                    <td>07/20/2023</td>
+                    <td>09/06/2023</td>
+                    <td>09/05/2024</td>
+                    <td>720 units (15-min)</td>
+                    <td>720 units</td>
+                    <td><span class="status-badge active">Expired</span></td>
+                    <td><span class="auth-link">View</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /main-content -->
+    </div><!-- /body-row -->
+  </div><!-- /view-detail -->
+</div><!-- /page-clients -->
+
+<!-- ==================== PAGE: SERVICES ==================== -->
+<div id="page-services" class="page">
+  <div class="page-title-bar" style="background:#444;">SERVICE PLANS — MY CASELOAD</div>
+  <div style="padding:12px;background:#d0d0d0;">
+    <!-- Filter bar -->
+    <div style="background:#fff;padding:12px 16px;margin-bottom:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <button class="svc-filter-btn active-filter" onclick="filterSvcPlans('all',this)">All Plans <span style="background:#555;color:#fff;font-size:10px;padding:1px 6px;margin-left:4px;">34</span></button>
+      <button class="svc-filter-btn" onclick="filterSvcPlans('renewal',this)">Renewal Due This Month <span style="background:#c00;color:#fff;font-size:10px;padding:1px 6px;margin-left:4px;">5</span></button>
+      <button class="svc-filter-btn" onclick="filterSvcPlans('expiring',this)">Expiring Soon (60 days) <span style="background:#f0a800;color:#222;font-size:10px;padding:1px 6px;margin-left:4px;">8</span></button>
+      <button class="svc-filter-btn" onclick="filterSvcPlans('pending',this)">Auth Pending <span style="background:#0c5460;color:#fff;font-size:10px;padding:1px 6px;margin-left:4px;">2</span></button>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <div class="form-group" style="margin:0;flex-direction:row;align-items:center;gap:6px;"><label style="white-space:nowrap;">Client:</label><input type="text" placeholder="Search name..." style="height:26px;border:1px solid #ccc;padding:3px 8px;font-size:12px;width:150px;"></div>
+        <div class="form-group" style="margin:0;flex-direction:row;align-items:center;gap:6px;"><label style="white-space:nowrap;">Service Type:</label><select style="height:26px;border:1px solid #ccc;font-size:12px;padding:2px 6px;"><option>All Types</option><option>PAS</option><option>Day Habilitation</option><option>Supported Employment</option><option>Respite</option><option>Transportation</option><option>Adaptive Aids</option><option>Home Modifications</option></select></div>
+      </div>
+    </div>
+    <style>
+      .svc-filter-btn { background:#f0f0f0; border:1px solid #ccc; font-size:12px; padding:5px 12px; cursor:pointer; color:#444; }
+      .svc-filter-btn:hover { background:#e4e4e4; }
+      .svc-filter-btn.active-filter { background:#1a5fa8; border-color:#1a5fa8; color:#fff; font-weight:600; }
+      .svc-filter-btn.active-filter span { background:rgba(255,255,255,0.3) !important; color:#fff !important; }
+      .svc-plan-row.renewal-row td:first-child { border-left:3px solid #c00; }
+      .svc-plan-row.expiring-row td:first-child { border-left:3px solid #f0a800; }
+      .svc-plan-row.auth-row td:first-child { border-left:3px solid #0c5460; }
+    </style>
+    <div style="background:#fff;">
+      <div class="section-header" id="svc-header">ALL SERVICE PLANS — 34 ACTIVE CLIENTS · 34 PLANS</div>
+      <table class="data-table" style="font-size:11px;" id="svc-table">
+        <thead><tr><th>Client Name</th><th>Program</th><th>Primary Service</th><th>Provider</th><th>Effective Date</th><th>Plan End Date</th><th>Annual Cost</th><th>Plan Status</th><th>Alert</th></tr></thead>
+        <tbody id="svc-tbody">
+          <tr class="svc-plan-row renewal-row" style="cursor:pointer;" onclick="showPage('clients');showView('view-detail',null);activateSidebarItem('plans')"><td>Morales, Diana R.</td><td>CLASS</td><td>Personal Attendant Services</td><td>Lone Star Home Health Agency</td><td>09/06/2023</td><td>09/05/2024</td><td>$109,612</td><td><span class="status-badge approved">Active</span></td><td><span class="status-badge pending" style="font-size:10px;">2 Auth Pending</span></td></tr>
+          <tr class="svc-plan-row"><td>Aguilar, Roberto S.</td><td>CLASS</td><td>Personal Attendant Services</td><td>Lone Star Home Health Agency</td><td>10/14/2023</td><td>10/13/2024</td><td>$87,440</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row expiring-row"><td>Beaumont, Cora L.</td><td>STAR+PLUS</td><td>Personal Attendant Services</td><td>Central TX Home Care</td><td>12/01/2023</td><td>11/30/2024</td><td>$72,180</td><td><span class="status-badge approved">Active</span></td><td><span class="status-badge pending" style="font-size:10px;">Exp 11/30</span></td></tr>
+          <tr class="svc-plan-row"><td>Castillo, Miguel A.</td><td>CLASS</td><td>Day Habilitation</td><td>Austin ILS Services</td><td>09/01/2023</td><td>08/31/2024</td><td>$64,800</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row renewal-row"><td>Delgado, Yvonne M.</td><td>CLASS</td><td>Personal Attendant Services</td><td>Lone Star Home Health Agency</td><td>11/01/2023</td><td>10/31/2024</td><td>$91,200</td><td><span class="status-badge pending">Renewal Due</span></td><td><span class="status-badge denied" style="font-size:10px;">PCP Due 11/01</span></td></tr>
+          <tr class="svc-plan-row"><td>Espinoza, James T.</td><td>STAR+PLUS</td><td>Personal Attendant Services</td><td>Central TX Home Care</td><td>08/20/2023</td><td>08/19/2024</td><td>$83,560</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row expiring-row"><td>Franklin, Darlene K.</td><td>CLASS</td><td>Supported Employment</td><td>Hill Country Employment</td><td>12/10/2023</td><td>12/09/2024</td><td>$28,400</td><td><span class="status-badge approved">Active</span></td><td><span class="status-badge pending" style="font-size:10px;">Exp 12/09</span></td></tr>
+          <tr class="svc-plan-row"><td>Guerrero, Pamela R.</td><td>CLASS</td><td>Day Habilitation</td><td>Austin ILS Services</td><td>09/15/2023</td><td>09/14/2024</td><td>$58,200</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row expiring-row"><td>Hartley, Samuel W.</td><td>STAR+PLUS</td><td>Personal Attendant Services</td><td>Central TX Home Care</td><td>12/01/2023</td><td>11/30/2024</td><td>$99,440</td><td><span class="status-badge active">LOC Due</span></td><td><span class="status-badge active" style="font-size:10px;">LOC Exp 11/15</span></td></tr>
+          <tr class="svc-plan-row"><td>Ibarra, Lucia N.</td><td>CLASS</td><td>Personal Attendant Services</td><td>Lone Star Home Health Agency</td><td>07/01/2023</td><td>06/30/2024</td><td>$76,800</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row"><td>Jefferson, Calvin B.</td><td>CLASS</td><td>Respite Services</td><td>Capital City Respite Care</td><td>10/01/2023</td><td>09/30/2024</td><td>$31,200</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row expiring-row"><td>Kim, Margaret S.</td><td>STAR+PLUS</td><td>Personal Attendant Services</td><td>Williamson County Home Health</td><td>12/15/2023</td><td>12/14/2024</td><td>$88,320</td><td><span class="status-badge approved">Active</span></td><td><span class="status-badge pending" style="font-size:10px;">Exp 12/14</span></td></tr>
+          <tr class="svc-plan-row"><td>Lopez, Anthony J.</td><td>CLASS</td><td>Day Habilitation</td><td>Austin ILS Services</td><td>09/20/2023</td><td>09/19/2024</td><td>$61,440</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row renewal-row"><td>Monroe, Patricia A.</td><td>STAR+PLUS</td><td>Personal Attendant Services</td><td>Central TX Home Care</td><td>11/15/2023</td><td>11/14/2024</td><td>$94,560</td><td><span class="status-badge pending">Renewal Due</span></td><td><span class="status-badge denied" style="font-size:10px;">Note Overdue</span></td></tr>
+          <tr class="svc-plan-row"><td>Nguyen, Thanh P.</td><td>CLASS</td><td>Supported Employment</td><td>Hill Country Employment</td><td>08/01/2023</td><td>07/31/2024</td><td>$32,640</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row"><td>Okafor, Blessing C.</td><td>CLASS</td><td>Personal Attendant Services</td><td>Lone Star Home Health Agency</td><td>09/10/2023</td><td>09/09/2024</td><td>$78,960</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row expiring-row"><td>Patel, Anita R.</td><td>STAR+PLUS</td><td>Personal Attendant Services</td><td>Williamson County Home Health</td><td>12/05/2023</td><td>12/04/2024</td><td>$81,600</td><td><span class="status-badge approved">Active</span></td><td><span class="status-badge pending" style="font-size:10px;">Exp 12/04</span></td></tr>
+          <tr class="svc-plan-row expiring-row"><td>Quinn, Daniel M.</td><td>CLASS</td><td>Day Habilitation</td><td>Austin ILS Services</td><td>12/01/2023</td><td>11/30/2024</td><td>$55,800</td><td><span class="status-badge active">LOC Due</span></td><td><span class="status-badge active" style="font-size:10px;">LOC Exp 12/01</span></td></tr>
+          <tr class="svc-plan-row"><td>Ramirez, Gloria E.</td><td>CLASS</td><td>Personal Attendant Services</td><td>Lone Star Home Health Agency</td><td>10/20/2023</td><td>10/19/2024</td><td>$73,440</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row"><td>Stevens, Howard L.</td><td>STAR+PLUS</td><td>Personal Attendant Services</td><td>Central TX Home Care</td><td>08/15/2023</td><td>08/14/2024</td><td>$96,000</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row"><td>Torres, Isabelle N.</td><td>CLASS</td><td>Respite Services</td><td>Capital City Respite Care</td><td>09/25/2023</td><td>09/24/2024</td><td>$24,800</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row renewal-row"><td>Underwood, James P.</td><td>STAR+PLUS</td><td>Personal Attendant Services</td><td>Central TX Home Care</td><td>11/10/2023</td><td>11/09/2024</td><td>$102,240</td><td><span class="status-badge pending">Renewal Due</span></td><td><span class="status-badge denied" style="font-size:10px;">Note Overdue</span></td></tr>
+          <tr class="svc-plan-row"><td>Vasquez, Maria C.</td><td>CLASS</td><td>Personal Attendant Services</td><td>Lone Star Home Health Agency</td><td>10/05/2023</td><td>10/04/2024</td><td>$69,120</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row auth-row"><td>Wallace, Denise R.</td><td>CLASS</td><td>Adaptive Aids</td><td>Lone Star Home Health Agency</td><td>09/18/2023</td><td>09/17/2024</td><td>$18,400</td><td><span class="status-badge approved">Active</span></td><td><span class="status-badge pending" style="font-size:10px;">Auth Pending</span></td></tr>
+          <tr class="svc-plan-row"><td>Xavier, Thomas E.</td><td>STAR+PLUS</td><td>Personal Attendant Services</td><td>Williamson County Home Health</td><td>08/10/2023</td><td>08/09/2024</td><td>$84,960</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row"><td>Young, Patricia A.</td><td>CLASS</td><td>Day Habilitation</td><td>Austin ILS Services</td><td>09/30/2023</td><td>09/29/2024</td><td>$57,600</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row expiring-row"><td>Zimmerman, Carl W.</td><td>STAR+PLUS</td><td>Personal Attendant Services</td><td>Central TX Home Care</td><td>12/20/2023</td><td>12/19/2024</td><td>$91,440</td><td><span class="status-badge approved">Active</span></td><td><span class="status-badge pending" style="font-size:10px;">Exp 12/19</span></td></tr>
+          <tr class="svc-plan-row"><td>Adeyemi, Folake T.</td><td>CLASS</td><td>Supported Employment</td><td>Hill Country Employment</td><td>07/15/2023</td><td>07/14/2024</td><td>$29,760</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row"><td>Burns, Kevin J.</td><td>CLASS</td><td>Personal Attendant Services</td><td>Lone Star Home Health Agency</td><td>10/28/2023</td><td>10/27/2024</td><td>$80,160</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row renewal-row"><td>Chávez, Rosa L.</td><td>CLASS</td><td>Personal Attendant Services</td><td>Lone Star Home Health Agency</td><td>11/15/2023</td><td>11/14/2024</td><td>$77,280</td><td><span class="status-badge pending">Renewal Due</span></td><td><span class="status-badge pending" style="font-size:10px;">PCP Due 11/15</span></td></tr>
+          <tr class="svc-plan-row"><td>Doran, Eileen M.</td><td>STAR+PLUS</td><td>Personal Attendant Services</td><td>Central TX Home Care</td><td>09/08/2023</td><td>09/07/2024</td><td>$89,760</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row"><td>Ellis, Marcus D.</td><td>CLASS</td><td>Respite Services</td><td>Capital City Respite Care</td><td>08/22/2023</td><td>08/21/2024</td><td>$22,400</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row"><td>Flores, Sandra G.</td><td>CLASS</td><td>Day Habilitation</td><td>Austin ILS Services</td><td>09/12/2023</td><td>09/11/2024</td><td>$62,880</td><td><span class="status-badge approved">Active</span></td><td></td></tr>
+          <tr class="svc-plan-row expiring-row"><td>Goldstein, Alan R.</td><td>STAR+PLUS</td><td>Personal Attendant Services</td><td>Central TX Home Care</td><td>12/08/2023</td><td>12/07/2024</td><td>$93,120</td><td><span class="status-badge active">LOC Due</span></td><td><span class="status-badge denied" style="font-size:10px;">Note Overdue</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: PROVIDERS ==================== -->
+<div id="page-providers" class="page">
+  <div class="page-title-bar" style="background:#444;">PROVIDER SEARCH — REGION 7</div>
+  <div style="padding:12px;background:#d0d0d0;">
+    <div style="background:#fff;padding:14px 16px;margin-bottom:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:12px;margin-bottom:10px;">
+        <div class="form-group"><label>Provider Name:</label><input type="text" placeholder="Name or keyword"></div>
+        <div class="form-group"><label>Provider #:</label><input type="text"></div>
+        <div class="form-group"><label>Region:</label><div class="multi-select"><span>Region 7 (selected)</span> ▾</div></div>
+        <div class="form-group"><label>Service Type:</label><div class="multi-select"><span>All selected (56)</span> ▾</div></div>
+        <div class="form-group"><label>Status:</label><div class="multi-select"><span>Active only</span> ▾</div></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn-reset">Reset</button>
+        <button class="btn-search">Search</button>
+      </div>
+    </div>
+    <div style="background:#fff;">
+      <div class="section-header">PROVIDER RESULTS — 12 providers · Region 7</div>
+      <table class="data-table" style="font-size:11px;">
+        <thead><tr><th>Provider Name</th><th>Provider #</th><th>County Coverage</th><th>Status</th><th>Services Offered</th><th>Active Clients (My Caseload)</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:600;">Lone Star Home Health Agency</td>
+            <td>PRV-TX-0044182</td>
+            <td>Travis · Bastrop · Caldwell</td>
+            <td><span class="status-badge approved">Active</span></td>
+            <td>PAS · Day Hab · Supported Employment · Respite · Transportation · Adaptive Aids · Home Modifications</td>
+            <td style="text-align:center;font-weight:700;">14</td>
+            <td><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">Details</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">Central TX Home Care</td>
+            <td>PRV-TX-0061294</td>
+            <td>Travis · Hays · Caldwell</td>
+            <td><span class="status-badge approved">Active</span></td>
+            <td>Personal Attendant Services · Respite · Nursing Services</td>
+            <td style="text-align:center;font-weight:700;">9</td>
+            <td><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">Details</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">Austin ILS Services</td>
+            <td>PRV-TX-0078831</td>
+            <td>Travis · Williamson</td>
+            <td><span class="status-badge approved">Active</span></td>
+            <td>Day Habilitation · Supported Employment · Prevocational Services</td>
+            <td style="text-align:center;font-weight:700;">6</td>
+            <td><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">Details</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">Hill Country Employment Services</td>
+            <td>PRV-TX-0092417</td>
+            <td>Travis · Hays · Blanco</td>
+            <td><span class="status-badge approved">Active</span></td>
+            <td>Supported Employment · Job Development · Job Coaching · Prevocational Services</td>
+            <td style="text-align:center;font-weight:700;">3</td>
+            <td><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">Details</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">Capital City Respite Care</td>
+            <td>PRV-TX-0103558</td>
+            <td>Travis · Bastrop</td>
+            <td><span class="status-badge approved">Active</span></td>
+            <td>Respite Services (In-Home) · Respite Services (Out-of-Home)</td>
+            <td style="text-align:center;font-weight:700;">3</td>
+            <td><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">Details</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">Williamson County Home Health</td>
+            <td>PRV-TX-0114763</td>
+            <td>Williamson · Travis</td>
+            <td><span class="status-badge approved">Active</span></td>
+            <td>Personal Attendant Services · Nursing Services · Physical Therapy · Occupational Therapy</td>
+            <td style="text-align:center;font-weight:700;">3</td>
+            <td><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">Details</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">Verde Valley Adaptive Equipment</td>
+            <td>PRV-TX-0128004</td>
+            <td>Travis · Hays · Caldwell · Bastrop</td>
+            <td><span class="status-badge approved">Active</span></td>
+            <td>Adaptive Aids · Minor Home Modifications · Assistive Technology</td>
+            <td style="text-align:center;font-weight:700;">0</td>
+            <td><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">Details</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">Travis County Behavioral Support Services</td>
+            <td>PRV-TX-0139221</td>
+            <td>Travis</td>
+            <td><span class="status-badge approved">Active</span></td>
+            <td>Behavioral Support Services · Crisis Intervention · Psychiatric Services</td>
+            <td style="text-align:center;font-weight:700;">0</td>
+            <td><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">Details</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">Bluebonnet Home Nursing</td>
+            <td>PRV-TX-0147890</td>
+            <td>Travis · Bastrop · Caldwell</td>
+            <td><span class="status-badge approved">Active</span></td>
+            <td>Skilled Nursing · Physical Therapy · Occupational Therapy · Speech Therapy</td>
+            <td style="text-align:center;font-weight:700;">0</td>
+            <td><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">Details</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">Alamo Transit Solutions</td>
+            <td>PRV-TX-0156612</td>
+            <td>Travis · Hays · Williamson · Bastrop</td>
+            <td><span class="status-badge approved">Active</span></td>
+            <td>Non-Emergency Medical Transportation · Community Transportation</td>
+            <td style="text-align:center;font-weight:700;">0</td>
+            <td><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">Details</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">Central Texas Day Activity Center</td>
+            <td>PRV-TX-0163047</td>
+            <td>Travis · Williamson</td>
+            <td><span class="status-badge approved">Active</span></td>
+            <td>Day Habilitation · Day Activity and Health Services (DAHS)</td>
+            <td style="text-align:center;font-weight:700;">0</td>
+            <td><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">Details</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">Lone Star Financial Management Services</td>
+            <td>PRV-TX-0178334</td>
+            <td>Statewide (CDSA/FMS)</td>
+            <td><span class="status-badge active">FMS Only</span></td>
+            <td>Consumer Directed Services Agency (CDSA) · Financial Management Services</td>
+            <td style="text-align:center;font-weight:700;">—</td>
+            <td><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">Details</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: REPORTS ==================== -->
+<div id="page-reports" class="page">
+  <div class="page-title-bar" style="background:#444;">REPORTS</div>
+  <div style="padding:12px;background:#d0d0d0;">
+    <div style="background:#fff;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#555;margin-bottom:14px;">Report Type</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;"><input type="radio" name="rpt" checked> Prior Authorization Status</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;"><input type="radio" name="rpt"> Service Utilization</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;"><input type="radio" name="rpt"> Monthly Notes Due</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;"><input type="radio" name="rpt"> Annual PCP Renewals</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;"><input type="radio" name="rpt"> LOC Reassessments Due</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;"><input type="radio" name="rpt"> Incident Reports</label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div class="form-group"><label>Date Range From:</label><input type="text" placeholder="MM/DD/YYYY" value="10/01/2026"></div>
+        <div class="form-group"><label>Date Range To:</label><input type="text" placeholder="MM/DD/YYYY" value="10/31/2026"></div>
+        <div class="form-group"><label>Region:</label><div class="multi-select"><span>All selected (7)</span> ▾</div></div>
+        <div class="form-group"><label>Provider:</label><div class="multi-select"><span>All selected (15)</span> ▾</div></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn-reset">Reset</button>
+        <button class="btn-search">Run Report</button>
+        <button style="background:#555;color:#fff;border:none;font-size:12px;padding:5px 16px;cursor:pointer;">Export CSV</button>
+      </div>
+    </div>
+    <div style="background:#fff;">
+      <div class="section-header">PRIOR AUTHORIZATION STATUS REPORT — October 2026</div>
+      <table class="data-table" style="font-size:12px;">
+        <thead><tr><th>Auth #</th><th>Client Name</th><th>Service</th><th>Provider</th><th>Requested Date</th><th>Status</th><th>Days Pending</th></tr></thead>
+        <tbody>
+          <tr><td>PA-2026-00443</td><td>Morales, Diana R.</td><td>Minor Home Modifications</td><td>Lone Star Home Health Agency</td><td>09/15/2026</td><td><span class="status-badge pending">Pending Review</span></td><td style="font-weight:700;color:#856404;">45 days</td></tr>
+          <tr><td>PA-2026-00444</td><td>Morales, Diana R.</td><td>Adaptive Aids — Wheelchair Maint.</td><td>Lone Star Home Health Agency</td><td>10/01/2026</td><td><span class="status-badge pending">Pending Review</span></td><td style="font-weight:700;color:#856404;">29 days</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: HELP / FEEDBACK ==================== -->
+<div id="page-help" class="page">
+  <div style="padding:24px 20px;background:#d0d0d0;">
+    <div style="background:#fff;padding:24px;max-width:600px;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Help &amp; Resources</div>
+      <div style="font-size:12px;color:#444;line-height:1.8;">
+        <div style="padding:6px 0;border-bottom:1px solid #eee;"><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">Provider Portal User Guide (PDF)</span></div>
+        <div style="padding:6px 0;border-bottom:1px solid #eee;"><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">CLASS Waiver Provider Handbook</span></div>
+        <div style="padding:6px 0;border-bottom:1px solid #eee;"><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">Prior Authorization Instructions</span></div>
+        <div style="padding:6px 0;border-bottom:1px solid #eee;"><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">Contact HHSC Region 7</span></div>
+        <div style="padding:6px 0;"><span style="color:#1a5fa8;text-decoration:underline;cursor:pointer;">TMHP Helpdesk: (800) 925-9126</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="page-feedback" class="page">
+  <div style="padding:24px 20px;background:#d0d0d0;">
+    <div style="background:#fff;padding:24px;max-width:500px;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:16px;">Submit Feedback</div>
+      <div class="form-group" style="margin-bottom:12px;"><label>Category:</label><select><option>Bug / Error</option><option>Feature Request</option><option>General Feedback</option></select></div>
+      <div class="form-group" style="margin-bottom:12px;"><label>Description:</label><textarea style="border:1px solid #ccc;padding:8px;font-size:12px;width:100%;height:80px;resize:vertical;"></textarea></div>
+      <button class="btn-search">Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="conf-footer">
+  De-identified representation of a statewide LTSS provider portal. Participant names, IDs, and agency details modified for confidentiality. Developed for portfolio illustration purposes.
+</div>
+
+<script>
+  // Top nav routing
+  function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + pageId).classList.add('active');
+    document.querySelectorAll('.nav-link').forEach(a => {
+      a.classList.toggle('active', a.dataset.page === pageId);
+    });
+  }
+  document.querySelectorAll('.nav-link').forEach(a => {
+    a.addEventListener('click', () => showPage(a.dataset.page));
+  });
+
+  // View routing within Clients page
+  // Track which caseload row opened the detail view
+  let activeClientRow = null;
+  function showView(viewId, sourceRow) {
+    document.querySelectorAll('#page-clients .view').forEach(v => v.style.display = 'none');
+    const el = document.getElementById(viewId);
+    if (el) el.style.display = '';
+    // Highlight active row in both caseload tables
+    document.querySelectorAll('.client-row').forEach(r => r.classList.remove('active-record'));
+    if (sourceRow) {
+      sourceRow.classList.add('active-record');
+      activeClientRow = sourceRow;
+    } else if (activeClientRow && viewId === 'view-detail') {
+      activeClientRow.classList.add('active-record');
+    }
+  }
+
+  // Sidebar routing within client detail
+  function activateSidebarItem(detailId) {
+    document.querySelectorAll('.detail-section').forEach(s => s.style.display = 'none');
+    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+    const section = document.getElementById('detail-' + detailId);
+    if (section) section.style.display = '';
+    document.querySelectorAll('.sidebar-item[data-detail="' + detailId + '"]').forEach(i => i.classList.add('active'));
+  }
+  document.querySelectorAll('.sidebar-item').forEach(item => {
+    item.addEventListener('click', () => activateSidebarItem(item.dataset.detail));
+  });
+
+  // Services plan filter tabs
+  function filterSvcPlans(type, btn) {
+    document.querySelectorAll('.svc-filter-btn').forEach(b => b.classList.remove('active-filter'));
+    if (btn) btn.classList.add('active-filter');
+    const rows = document.querySelectorAll('#svc-tbody .svc-plan-row');
+    let shown = 0;
+    rows.forEach(row => {
+      let visible = true;
+      if (type === 'renewal') visible = row.classList.contains('renewal-row');
+      else if (type === 'expiring') visible = row.classList.contains('expiring-row');
+      else if (type === 'pending') visible = row.classList.contains('auth-row');
+      row.style.display = visible ? '' : 'none';
+      if (visible) shown++;
+    });
+    const labels = {all:'ALL SERVICE PLANS — 34 ACTIVE CLIENTS · 34 PLANS', renewal:'RENEWAL DUE THIS MONTH — 5 PLANS', expiring:'EXPIRING WITHIN 60 DAYS — 8 PLANS', pending:'AUTHORIZATION PENDING — 2 PLANS'};
+    document.getElementById('svc-header').textContent = labels[type] || '';
+  }
+
+  // Accordion toggle
+  document.addEventListener('click', function(e) {
+    const title = e.target.closest('.accordion-title');
+    if (!title) return;
+    const content = title.nextElementSibling;
+    const arrow = title.querySelector('.arrow');
+    if (!content || !arrow) return;
+    if (content.classList.contains('open')) {
+      content.classList.remove('open');
+      title.classList.remove('open');
+      arrow.innerHTML = '&#9658;';
+    } else {
+      content.classList.add('open');
+      title.classList.add('open');
+      arrow.innerHTML = '&#9660;';
+    }
+  });
+</script>
+</body>
+</html>
